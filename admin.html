@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理者ページ | 【美味しい1杯】</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red:       #C0392B;
+      --red-dark:  #922B21;
+      --red-light: #E74C3C;
+      --ink:       #1A1A1A;
+      --ink-mid:   #3D3D3D;
+      --ash:       #6B6B6B;
+      --washi:     #F5F0E8;
+      --washi-mid: #EDE6D6;
+      --gold:      #D4A017;
+      --white:     #FEFEFE;
+      --card-bg:   #FFFDF8;
+      --admin-accent: #1A3A5C;
+      --admin-light:  #2980B9;
+      --shadow:    rgba(26,26,26,0.15);
+      --font-serif: 'Noto Serif JP', serif;
+      --font-sans:  'Noto Sans JP', sans-serif;
+      --radius: 4px;
+      --radius-lg: 8px;
+      --transition: 0.22s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: #EEF2F7;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ===== LOGIN SCREEN ===== */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #1A3A5C 0%, #0D1F33 100%);
+    }
+
+    .login-box {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+      border-top: 5px solid var(--gold);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .login-logo .badge {
+      display: inline-block;
+      background: var(--admin-accent);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .login-logo h1 {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+
+    .login-logo p {
+      font-size: 12px;
+      color: var(--ash);
+      margin-top: 4px;
+    }
+
+    .login-box .field { margin-bottom: 18px; }
+
+    .login-box label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--ash);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #D5CCBB;
+      border-radius: var(--radius);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--white);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .login-box input:focus {
+      border-color: var(--admin-accent);
+      box-shadow: 0 0 0 3px rgba(26,58,92,0.12);
+    }
+
+    #login-error {
+      font-size: 12px;
+      color: var(--red-light);
+      margin-bottom: 14px;
+      display: none;
+      padding: 8px 12px;
+      background: rgba(231,76,60,0.08);
+      border-radius: var(--radius);
+      border-left: 3px solid var(--red-light);
+    }
+
+    /* ===== ADMIN APP ===== */
+    #admin-app { display: none; }
+
+    /* ===== HEADER ===== */
+    .admin-header {
+      background: var(--admin-accent);
+      padding: 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+
+    .admin-header::before {
+      content: '';
+      display: block;
+      height: 4px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--gold) 0px, var(--gold) 40px,
+        var(--admin-accent) 40px, var(--admin-accent) 44px
+      );
+    }
+
+    .admin-header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .admin-header h1 {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .admin-badge {
+      background: var(--gold);
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 2px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .admin-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .admin-count {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* ===== MAIN ===== */
+    .admin-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+    }
+
+    /* ===== TOOLBAR ===== */
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .toolbar input[type="text"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 9px 14px;
+      border: 1.5px solid #C8C0B0;
+      border-radius: var(--radius);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      background: var(--white);
+      outline: none;
+      transition: border-color var(--transition);
+    }
+
+    .toolbar input[type="text"]:focus {
+      border-color: var(--admin-accent);
+    }
+
+    .toolbar select {
+      padding: 9px 32px 9px 12px;
+      border: 1.5px solid #C8C0B0;
+      border-radius: var(--radius);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      background: var(--white)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6B6B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
+        no-repeat right 10px center;
+      appearance: none;
+      outline: none;
+    }
+
+    /* ===== TABLE ===== */
+    .table-wrap {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 2px 12px var(--shadow);
+      overflow: hidden;
+      border: 1px solid var(--washi-mid);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead {
+      background: var(--admin-accent);
+      color: white;
+    }
+
+    thead th {
+      padding: 12px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    thead th:last-child { text-align: right; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--washi-mid);
+      transition: background var(--transition);
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(26,58,92,0.04); }
+
+    td {
+      padding: 11px 14px;
+      vertical-align: middle;
+      color: var(--ink-mid);
+    }
+
+    td.td-nickname {
+      font-weight: 700;
+      color: var(--ink);
+      font-family: var(--font-serif);
+    }
+
+    td.td-comment {
+      max-width: 220px;
+      color: var(--ash);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    td.td-date {
+      font-size: 11px;
+      color: var(--ash);
+      white-space: nowrap;
+    }
+
+    td.td-actions {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .tag-area  { background: rgba(192,57,43,0.09); color: #922B21; }
+    .tag-drink { background: rgba(212,160,23,0.12); color: #8B6914; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 9px 20px;
+      border-radius: var(--radius);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: background var(--transition), color var(--transition), transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--admin-accent);
+      color: white;
+      border-color: var(--admin-accent);
+    }
+    .btn-primary:hover:not(:disabled) { background: #0F2440; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--ash);
+      border-color: #C8BDA8;
+    }
+    .btn-ghost:hover:not(:disabled) { background: var(--washi-mid); color: var(--ink); }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--red-light);
+      border-color: var(--red-light);
+    }
+    .btn-danger:hover:not(:disabled) { background: var(--red-light); color: white; }
+
+    .btn-warn {
+      background: transparent;
+      color: var(--admin-light);
+      border-color: var(--admin-light);
+    }
+    .btn-warn:hover:not(:disabled) { background: var(--admin-light); color: white; }
+
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-full { width: 100%; }
+
+    .btn-logout {
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 14px;
+      font-size: 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .btn-logout:hover { background: rgba(255,255,255,0.1); color: white; }
+
+    /* ===== STATES ===== */
+    .state-empty, .state-loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--ash);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 28px; height: 28px;
+      border: 3px solid var(--washi-mid);
+      border-top-color: var(--admin-accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 10px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--ink);
+      color: white;
+      padding: 11px 24px;
+      border-radius: 40px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 9999;
+      border-left: 4px solid var(--gold);
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.error { border-left-color: var(--red-light); }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,10,0.72);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      border-top: 4px solid var(--admin-accent);
+    }
+
+    .modal h3 {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--ink);
+    }
+
+    .modal .field { margin-bottom: 16px; }
+
+    .modal label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--ash);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .modal input,
+    .modal select,
+    .modal textarea {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid #D5CCBB;
+      border-radius: var(--radius);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--white);
+      outline: none;
+      transition: border-color var(--transition);
+      appearance: none;
+    }
+
+    .modal select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6B6B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .modal textarea { resize: vertical; min-height: 72px; }
+
+    .modal input:focus, .modal select:focus, .modal textarea:focus {
+      border-color: var(--admin-accent);
+      box-shadow: 0 0 0 3px rgba(26,58,92,0.1);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    /* ===== DELETE CONFIRM ===== */
+    .confirm-box {
+      background: rgba(192,57,43,0.06);
+      border: 1px solid rgba(192,57,43,0.2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--red-dark);
+      line-height: 1.7;
+    }
+
+    .confirm-box strong { font-weight: 700; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .admin-header-inner { padding: 12px 16px; }
+      .admin-main { padding: 20px 12px 60px; }
+      .toolbar { gap: 8px; }
+      table { font-size: 12px; }
+      td, thead th { padding: 9px 10px; }
+      td.td-comment { display: none; }
+      .modal { padding: 24px 18px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="badge">Admin</span>
+      <h1>【美味しい1杯】<br>管理者ページ</h1>
+      <p>管理者パスワードでログインしてください</p>
+    </div>
+    <div id="login-error">パスワードが違います。再度お試しください。</div>
+    <div class="field">
+      <label>管理者パスワード</label>
+      <input type="password" id="login-pw" placeholder="パスワードを入力"
+             onkeydown="if(event.key==='Enter') doLogin()" autofocus />
+    </div>
+    <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()">
+      🔑 ログイン
+    </button>
+  </div>
+</div>
+
+<!-- ===== ADMIN APP ===== -->
+<div id="admin-app">
+
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <h1>
+        🏮 【美味しい1杯】
+        <span class="admin-badge">管理者</span>
+      </h1>
+      <div class="admin-header-actions">
+        <span class="admin-count" id="member-count"></span>
+        <button class="btn btn-ghost btn-sm" onclick="loadMembers()">🔄 更新</button>
+        <button class="btn-logout" onclick="doLogout()">ログアウト</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+
+    <div class="toolbar">
+      <input type="text" id="search-input" placeholder="🔍 ニックネーム・コメントで検索…"
+             oninput="filterTable()" />
+      <select id="filter-area" onchange="filterTable()">
+        <option value="">📍 エリア：すべて</option>
+        <option>新橋・汐留</option><option>銀座・有楽町</option>
+        <option>虎ノ門・内幸町</option><option>渋谷・恵比寿</option>
+        <option>新宿・高田馬場</option><option>池袋・目白</option>
+        <option>上野・浅草</option><option>品川・大井町</option>
+        <option>その他</option>
+      </select>
+      <select id="filter-drink" onchange="filterTable()">
+        <option value="">🍺 お酒：すべて</option>
+        <option>ビール派</option><option>日本酒派</option>
+        <option>焼酎派</option><option>ハイボール派</option>
+        <option>ワイン派</option><option>なんでも飲む</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="resetFilter()">リセット</button>
+    </div>
+
+    <div class="table-wrap">
+      <div id="table-container">
+        <div class="state-loading">
+          <div class="spinner"></div>
+          <p>読み込み中…</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<!-- ===== MODAL: 修正フォーム ===== -->
+<div class="modal-overlay" id="modal-edit" onclick="closeModal('modal-edit', event)">
+  <div class="modal">
+    <h3>✏️ 投稿を修正（管理者）</h3>
+    <input type="hidden" id="edit-row-id" />
+    <div class="field">
+      <label>ニックネーム</label>
+      <input type="text" id="edit-nickname" maxlength="20" />
+    </div>
+    <div class="field">
+      <label>連絡先 / SNS</label>
+      <input type="text" id="edit-contact" maxlength="60" />
+    </div>
+    <div class="field">
+      <label>よく行くエリア</label>
+      <select id="edit-area">
+        <option>新橋・汐留</option><option>銀座・有楽町</option>
+        <option>虎ノ門・内幸町</option><option>渋谷・恵比寿</option>
+        <option>新宿・高田馬場</option><option>池袋・目白</option>
+        <option>上野・浅草</option><option>品川・大井町</option>
+        <option>その他</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>お酒の好み</label>
+      <select id="edit-drink">
+        <option>ビール派</option><option>日本酒派</option>
+        <option>焼酎派</option><option>ハイボール派</option>
+        <option>ワイン派</option><option>なんでも飲む</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>一言コメント</label>
+      <textarea id="edit-comment" maxlength="100"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-edit')">キャンセル</button>
+      <button class="btn btn-primary" style="flex:1" id="edit-submit-btn" onclick="submitEdit()">更新する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: 削除確認 ===== -->
+<div class="modal-overlay" id="modal-delete" onclick="closeModal('modal-delete', event)">
+  <div class="modal">
+    <h3>🗑 投稿を削除（管理者）</h3>
+    <input type="hidden" id="delete-row-id" />
+    <div class="confirm-box" id="delete-confirm-text"></div>
+    <p style="font-size:13px; color:var(--ash); margin-bottom:4px;">
+      この操作は取り消せません。本当に削除しますか？
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-delete')">キャンセル</button>
+      <button class="btn btn-danger" style="flex:1" id="delete-submit-btn" onclick="submitDelete()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =============================================
+// ⚙️ 設定
+// =============================================
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyRXfcExFNhBpRmPabhtHCY06YODYuUR00H3XeCaqQ7SeaNEbTBIkJYNBbAXDaLVMxB/exec';
+// =============================================
+
+let adminPassword = '';
+let allMembers    = [];
+
+// ===== ログイン =====
+async function doLogin() {
+  const pw  = document.getElementById('login-pw').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+
+  if (!pw) return;
+  btn.disabled = true;
+  btn.textContent = '確認中…';
+  err.style.display = 'none';
+
+  try {
+    const res  = await fetch(`${GAS_URL}?action=adminList&adminPassword=${encodeURIComponent(pw)}`);
+    const data = await res.json();
+
+    if (data.status !== 'ok') throw new Error(data.message);
+
+    adminPassword = pw;
+    allMembers    = data.members || [];
+
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-app').style.display    = 'block';
+    renderTable(allMembers);
+  } catch (e) {
+    err.style.display = 'block';
+    err.textContent   = e.message || 'ログインに失敗しました';
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '🔑 ログイン';
+  }
+}
+
+function doLogout() {
+  adminPassword = '';
+  allMembers    = [];
+  document.getElementById('login-pw').value     = '';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-app').style.display    = 'none';
+}
+
+// ===== 一覧取得（再ロード） =====
+async function loadMembers() {
+  document.getElementById('table-container').innerHTML =
+    '<div class="state-loading"><div class="spinner"></div><p>読み込み中…</p></div>';
+
+  try {
+    const res  = await fetch(`${GAS_URL}?action=adminList&adminPassword=${encodeURIComponent(adminPassword)}`);
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message);
+    allMembers = data.members || [];
+    filterTable(); // 現在のフィルターを維持
+    showToast('✅ 更新しました');
+  } catch (e) {
+    showToast('更新失敗: ' + e.message, true);
+  }
+}
+
+// ===== テーブル描画 =====
+function renderTable(members) {
+  const count = document.getElementById('member-count');
+  count.textContent = `全 ${members.length} 件`;
+
+  if (!members.length) {
+    document.getElementById('table-container').innerHTML =
+      '<div class="state-empty"><p>データがありません</p></div>';
+    return;
+  }
+
+  const rows = members.map(m => `
+    <tr data-rowid="${escHtml(m.rowId)}">
+      <td class="td-nickname">${escHtml(m.nickname)}</td>
+      <td><span class="tag tag-area">📍 ${escHtml(m.area)}</span></td>
+      <td><span class="tag tag-drink">${escHtml(m.drink)}</span></td>
+      <td class="td-comment">${escHtml(m.comment)}</td>
+      <td>${escHtml(m.contact)}</td>
+      <td class="td-date">${escHtml(m.date)}</td>
+      <td class="td-actions">
+        <button class="btn btn-warn btn-sm" onclick="openEdit('${m.rowId}')">✏️ 修正</button>
+        <button class="btn btn-danger btn-sm" onclick="openDelete('${m.rowId}', '${escHtml(m.nickname)}')">🗑 削除</button>
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('table-container').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>ニックネーム</th>
+          <th>エリア</th>
+          <th>お酒</th>
+          <th>コメント</th>
+          <th>連絡先</th>
+          <th>登録日</th>
+          <th style="text-align:right">操作</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ===== フィルター =====
+function filterTable() {
+  const q     = document.getElementById('search-input').value.toLowerCase();
+  const area  = document.getElementById('filter-area').value;
+  const drink = document.getElementById('filter-drink').value;
+
+  const filtered = allMembers.filter(m => {
+    const matchQ    = !q || m.nickname.toLowerCase().includes(q) || m.comment.toLowerCase().includes(q);
+    const matchArea = !area  || m.area  === area;
+    const matchDrink= !drink || m.drink === drink;
+    return matchQ && matchArea && matchDrink;
+  });
+
+  document.getElementById('member-count').textContent =
+    filtered.length === allMembers.length
+      ? `全 ${allMembers.length} 件`
+      : `${filtered.length} 件（全 ${allMembers.length} 件中）`;
+
+  renderTable(filtered);
+}
+
+function resetFilter() {
+  document.getElementById('search-input').value  = '';
+  document.getElementById('filter-area').value   = '';
+  document.getElementById('filter-drink').value  = '';
+  renderTable(allMembers);
+  document.getElementById('member-count').textContent = `全 ${allMembers.length} 件`;
+}
+
+// ===== 修正モーダルを開く =====
+function openEdit(rowId) {
+  const m = allMembers.find(x => x.rowId === rowId);
+  if (!m) return;
+
+  document.getElementById('edit-row-id').value  = rowId;
+  document.getElementById('edit-nickname').value = m.nickname;
+  document.getElementById('edit-contact').value  = m.contact;
+  document.getElementById('edit-area').value     = m.area;
+  document.getElementById('edit-drink').value    = m.drink;
+  document.getElementById('edit-comment').value  = m.comment;
+
+  document.getElementById('modal-edit').classList.add('open');
+}
+
+// ===== 修正実行 =====
+async function submitEdit() {
+  const rowId    = document.getElementById('edit-row-id').value;
+  const nickname = document.getElementById('edit-nickname').value.trim();
+  const contact  = document.getElementById('edit-contact').value.trim();
+  const area     = document.getElementById('edit-area').value;
+  const drink    = document.getElementById('edit-drink').value;
+  const comment  = document.getElementById('edit-comment').value.trim();
+
+  if (!nickname || !area || !drink || !comment) {
+    return showToast('必須項目を入力してください', true);
+  }
+
+  const btn = document.getElementById('edit-submit-btn');
+  btn.disabled    = true;
+  btn.textContent = '更新中…';
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'adminUpdate', adminPassword, rowId, nickname, contact, area, drink, comment })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message);
+
+    closeModal('modal-edit');
+    showToast('✅ 更新しました');
+    await loadMembers();
+  } catch (e) {
+    showToast('更新失敗: ' + e.message, true);
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '更新する';
+  }
+}
+
+// ===== 削除確認モーダルを開く =====
+function openDelete(rowId, nickname) {
+  document.getElementById('delete-row-id').value    = rowId;
+  document.getElementById('delete-confirm-text').innerHTML =
+    `<strong>${escHtml(nickname)}</strong> さんの投稿を削除します。`;
+  document.getElementById('modal-delete').classList.add('open');
+}
+
+// ===== 削除実行 =====
+async function submitDelete() {
+  const rowId = document.getElementById('delete-row-id').value;
+  const btn   = document.getElementById('delete-submit-btn');
+  btn.disabled    = true;
+  btn.textContent = '削除中…';
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'adminDelete', adminPassword, rowId })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message);
+
+    closeModal('modal-delete');
+    showToast('🗑 削除しました');
+    await loadMembers();
+  } catch (e) {
+    showToast('削除失敗: ' + e.message, true);
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '削除する';
+  }
+}
+
+// ===== モーダル制御 =====
+function closeModal(id, event) {
+  if (event && event.target !== document.getElementById(id)) return;
+  document.getElementById(id).classList.remove('open');
+}
+
+// ===== TOAST =====
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isError ? ' error' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ===== XSS対策 =====
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+</script>
+</body>
+</html>

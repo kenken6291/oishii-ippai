@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>美味しい1杯 | 飲み友達をさがそう</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== DESIGN TOKENS ===== */
+    :root {
+      --red:       #C0392B;
+      --red-dark:  #922B21;
+      --red-light: #E74C3C;
+      --ink:       #1A1A1A;
+      --ink-mid:   #3D3D3D;
+      --ash:       #6B6B6B;
+      --washi:     #F5F0E8;
+      --washi-mid: #EDE6D6;
+      --gold:      #D4A017;
+      --gold-light:#F0C040;
+      --white:     #FEFEFE;
+      --card-bg:   #FFFDF8;
+      --shadow:    rgba(26,26,26,0.18);
+
+      --font-serif: 'Noto Serif JP', serif;
+      --font-sans:  'Noto Sans JP', sans-serif;
+
+      --radius: 4px;
+      --radius-lg: 8px;
+      --transition: 0.22s ease;
+    }
+
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--washi);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ===== TEXTURE OVERLAY ===== */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(180,150,100,0.035) 2px,
+          rgba(180,150,100,0.035) 4px
+        );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== HEADER ===== */
+    .site-header {
+      background: var(--ink);
+      position: relative;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    /* ガード下の鉄骨感 */
+    .site-header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 6px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--red) 0px, var(--red) 60px,
+        var(--gold) 60px, var(--gold) 64px,
+        var(--red) 64px, var(--red) 124px,
+        var(--gold) 124px, var(--gold) 128px
+      );
+    }
+
+    .header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 36px 24px 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-eyebrow {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .site-title {
+      font-family: var(--font-serif);
+      font-size: clamp(2.2rem, 6vw, 3.4rem);
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+    }
+
+    .site-title .bracket {
+      color: var(--gold);
+      font-weight: 400;
+    }
+
+    .site-tagline {
+      margin-top: 10px;
+      font-size: clamp(12px, 2.5vw, 14px);
+      color: rgba(255,255,255,0.6);
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      line-height: 1.8;
+    }
+
+    /* ===== NAV TABS ===== */
+    .nav-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--red);
+      margin-top: 24px;
+    }
+
+    .nav-tab {
+      padding: 9px 22px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.55);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color var(--transition), border-color var(--transition);
+    }
+
+    .nav-tab:hover { color: rgba(255,255,255,0.85); }
+
+    .nav-tab.active {
+      color: var(--white);
+      border-bottom-color: var(--gold);
+    }
+
+    /* ===== MAIN ===== */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ===== SECTIONS ===== */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ===== SECTION HEADING ===== */
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .section-head-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--red) 0%, transparent 100%);
+    }
+
+    .section-head h2 {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--ink);
+      color: var(--white);
+      padding: 12px 24px;
+      border-radius: 40px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 9999;
+      border-left: 4px solid var(--gold);
+      white-space: nowrap;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    #toast.error { border-left-color: var(--red-light); }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,10,0.72);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      border-top: 4px solid var(--red);
+      position: relative;
+    }
+
+    .modal h3 {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .modal p {
+      font-size: 13px;
+      color: var(--ash);
+      margin-bottom: 20px;
+      line-height: 1.7;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    /* ===== FORM ===== */
+    .form-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      box-shadow: 0 2px 16px var(--shadow);
+      border: 1px solid var(--washi-mid);
+      border-top: 3px solid var(--red);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 20px;
+    }
+
+    .field {
+      margin-bottom: 20px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--ash);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    label .req {
+      color: var(--red);
+      margin-left: 2px;
+    }
+
+    label .hint {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--ash);
+      text-transform: none;
+      letter-spacing: 0;
+      margin-left: 6px;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid #D5CCBB;
+      border-radius: var(--radius);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--white);
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+      appearance: none;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(192,57,43,0.12);
+    }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6B6B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 22px;
+      border-radius: var(--radius);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: background var(--transition), color var(--transition), transform 0.1s, box-shadow var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--red);
+      color: var(--white);
+      border-color: var(--red);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--red-dark);
+      box-shadow: 0 4px 14px rgba(192,57,43,0.35);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--ash);
+      border-color: #C8BDA8;
+    }
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--washi-mid);
+      color: var(--ink);
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--red-light);
+      border-color: var(--red-light);
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: var(--red-light);
+      color: var(--white);
+    }
+
+    .btn-sm {
+      padding: 6px 13px;
+      font-size: 12px;
+    }
+
+    .btn-full { width: 100%; }
+
+    /* ===== CARD LIST ===== */
+    .card-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 18px;
+    }
+
+    /* 提灯風カード */
+    .member-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 22px 20px 18px;
+      box-shadow: 0 2px 10px var(--shadow);
+      border: 1px solid var(--washi-mid);
+      position: relative;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .member-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+    }
+
+    /* 提灯の紐 */
+    .member-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 10px;
+      background: var(--gold);
+      border-radius: 0 0 2px 2px;
+    }
+
+    /* 提灯の上線 */
+    .member-card::after {
+      content: '';
+      position: absolute;
+      top: 10px; left: 16px; right: 16px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .card-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      color: var(--white);
+      font-weight: 700;
+      flex-shrink: 0;
+      border: 2px solid var(--washi-mid);
+    }
+
+    .card-name {
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+
+    .card-date {
+      font-size: 11px;
+      color: var(--ash);
+      margin-top: 2px;
+      letter-spacing: 0.04em;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 14px 0 10px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      background: var(--washi-mid);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--ink-mid);
+    }
+
+    .tag-area { background: rgba(192,57,43,0.09); color: var(--red-dark); }
+    .tag-drink { background: rgba(212,160,23,0.12); color: #8B6914; }
+
+    .card-comment {
+      font-size: 13px;
+      color: var(--ink-mid);
+      line-height: 1.7;
+      padding: 10px 12px;
+      background: var(--washi);
+      border-radius: var(--radius);
+      border-left: 3px solid var(--gold);
+      margin-bottom: 14px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      border-top: 1px solid var(--washi-mid);
+      padding-top: 12px;
+    }
+
+    /* ===== EMPTY / LOADING ===== */
+    .state-empty, .state-loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--ash);
+    }
+
+    .state-empty .icon, .state-loading .icon {
+      font-size: 2.4rem;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .state-empty p, .state-loading p {
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--washi-mid);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== TOP BANNER ===== */
+    .info-banner {
+      background: linear-gradient(135deg, var(--ink) 0%, #2C1810 100%);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border: 1px solid rgba(212,160,23,0.3);
+    }
+
+    .info-banner .banner-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+
+    .info-banner p {
+      color: rgba(255,255,255,0.75);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .info-banner strong {
+      color: var(--gold-light);
+    }
+
+    /* ===== FILTER BAR ===== */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar select {
+      flex: 1;
+      min-width: 140px;
+      font-size: 13px;
+      padding: 8px 32px 8px 12px;
+    }
+
+    .filter-bar .btn {
+      flex-shrink: 0;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 11px;
+      color: var(--ash);
+      letter-spacing: 0.06em;
+      border-top: 1px solid var(--washi-mid);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ===== PASSWORD INFO BOX ===== */
+    .pw-info {
+      background: rgba(212,160,23,0.08);
+      border: 1px solid rgba(212,160,23,0.3);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #7A6010;
+      margin-top: -8px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      grid-column: 1 / -1;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-card { padding: 22px 16px; }
+      .card-list { grid-template-columns: 1fr; }
+      .nav-tab { padding: 8px 14px; font-size: 12px; }
+      .modal { padding: 24px 18px; }
+      .filter-bar { gap: 8px; }
+      .filter-bar select { min-width: 110px; }
+      .info-banner { flex-direction: column; gap: 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="header-inner">
+    <p class="header-eyebrow">Shinbashi · Ginza · Shimbashi</p>
+    <h1 class="site-title">
+      <span class="bracket">【</span>美味しい1杯<span class="bracket">】</span>
+    </h1>
+    <p class="site-tagline">
+      ガード下の一軒、隠れ家バー、立ち飲みの角打ち ——<br>
+      気取らない場所へ、ふらっと一緒に飲みに行ける仲間を探そう。
+    </p>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="showSection('list')">🍶 メンバー一覧</button>
+      <button class="nav-tab" onclick="showSection('register')">✏️ 新規登録</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main>
+
+  <!-- ===== LIST SECTION ===== -->
+  <section id="section-list" class="section active">
+    <div class="info-banner">
+      <span class="banner-icon">🏮</span>
+      <p>
+        <strong>飲み友達募集中のメンバー一覧です。</strong><br>
+        気になる方がいたら、SNSや連絡先欄を参考に声をかけてみてください。<br>
+        投稿の修正・削除は登録時のパスワードで行えます。
+      </p>
+    </div>
+
+    <div class="filter-bar">
+      <select id="filter-area" onchange="filterCards()">
+        <option value="">📍 エリア：すべて</option>
+        <option>新橋・汐留</option>
+        <option>銀座・有楽町</option>
+        <option>虎ノ門・内幸町</option>
+        <option>渋谷・恵比寿</option>
+        <option>新宿・高田馬場</option>
+        <option>池袋・目白</option>
+        <option>上野・浅草</option>
+        <option>品川・大井町</option>
+        <option>その他</option>
+      </select>
+      <select id="filter-drink" onchange="filterCards()">
+        <option value="">🍺 お酒：すべて</option>
+        <option>ビール派</option>
+        <option>日本酒派</option>
+        <option>焼酎派</option>
+        <option>ハイボール派</option>
+        <option>ワイン派</option>
+        <option>なんでも飲む</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="resetFilter()">リセット</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadMembers()">🔄 更新</button>
+    </div>
+
+    <div id="list-container">
+      <div class="state-loading">
+        <div class="spinner"></div>
+        <p>メンバー情報を読み込み中…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== REGISTER SECTION ===== -->
+  <section id="section-register" class="section">
+    <div class="section-head">
+      <h2>✏️ 飲み友達募集を登録</h2>
+      <div class="section-head-line"></div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-grid">
+
+        <div class="field full pw-info">
+          🔑 <strong>編集用パスワード</strong>は、後で投稿を修正・削除するときに必要です。<br>
+          絶対に忘れないようにメモしておいてください（4〜20文字）。
+        </div>
+
+        <div class="field">
+          <label>ニックネーム <span class="req">*</span></label>
+          <input type="text" id="reg-nickname" placeholder="例：のんびり太郎" maxlength="20" />
+        </div>
+
+        <div class="field">
+          <label>連絡先 / SNS<span class="hint">任意</span></label>
+          <input type="text" id="reg-contact" placeholder="例：@twitter_id" maxlength="60" />
+        </div>
+
+        <div class="field">
+          <label>よく行くエリア <span class="req">*</span></label>
+          <select id="reg-area">
+            <option value="">選択してください</option>
+            <option>新橋・汐留</option>
+            <option>銀座・有楽町</option>
+            <option>虎ノ門・内幸町</option>
+            <option>渋谷・恵比寿</option>
+            <option>新宿・高田馬場</option>
+            <option>池袋・目白</option>
+            <option>上野・浅草</option>
+            <option>品川・大井町</option>
+            <option>その他</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>お酒の好み <span class="req">*</span></label>
+          <select id="reg-drink">
+            <option value="">選択してください</option>
+            <option>ビール派</option>
+            <option>日本酒派</option>
+            <option>焼酎派</option>
+            <option>ハイボール派</option>
+            <option>ワイン派</option>
+            <option>なんでも飲む</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>一言コメント <span class="req">*</span><span class="hint">最大100文字</span></label>
+          <textarea id="reg-comment" placeholder="例：新橋のガード下が大好きです。一緒に串焼きとホッピーを楽しみましょう！" maxlength="100"></textarea>
+        </div>
+
+        <div class="field">
+          <label>編集用パスワード <span class="req">*</span></label>
+          <input type="password" id="reg-password" placeholder="4〜20文字" maxlength="20" />
+        </div>
+
+        <div class="field">
+          <label>パスワード確認 <span class="req">*</span></label>
+          <input type="password" id="reg-password-confirm" placeholder="もう一度入力" maxlength="20" />
+        </div>
+
+        <div class="field full" style="margin-bottom:0;">
+          <button class="btn btn-primary btn-full" onclick="registerMember()" id="reg-btn">
+            🍺 登録する
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <p>【美味しい1杯】— 大衆酒場で繋がる飲み友達マッチング</p>
+</footer>
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<!-- ===== MODAL: パスワード確認 ===== -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <h3 id="modal-title">投稿を編集</h3>
+    <p id="modal-desc">登録時のパスワードを入力してください。</p>
+    <div class="field">
+      <label>編集用パスワード</label>
+      <input type="password" id="modal-password" placeholder="パスワードを入力" maxlength="20"
+             onkeydown="if(event.key==='Enter') modalSubmit()" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" style="flex:1" id="modal-submit-btn" onclick="modalSubmit()">確認して実行</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: 修正フォーム ===== -->
+<div class="modal-overlay" id="modal-edit-overlay" onclick="closeEditModal(event)">
+  <div class="modal" style="max-width:520px;">
+    <h3>✏️ 投稿を修正</h3>
+    <p>内容を変更して「更新する」を押してください。</p>
+    <input type="hidden" id="edit-row-id" />
+    <input type="hidden" id="edit-password" />
+
+    <div class="field">
+      <label>ニックネーム <span class="req">*</span></label>
+      <input type="text" id="edit-nickname" maxlength="20" />
+    </div>
+    <div class="field">
+      <label>連絡先 / SNS</label>
+      <input type="text" id="edit-contact" maxlength="60" />
+    </div>
+    <div class="field">
+      <label>よく行くエリア <span class="req">*</span></label>
+      <select id="edit-area">
+        <option>新橋・汐留</option><option>銀座・有楽町</option>
+        <option>虎ノ門・内幸町</option><option>渋谷・恵比寿</option>
+        <option>新宿・高田馬場</option><option>池袋・目白</option>
+        <option>上野・浅草</option><option>品川・大井町</option>
+        <option>その他</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>お酒の好み <span class="req">*</span></label>
+      <select id="edit-drink">
+        <option>ビール派</option><option>日本酒派</option>
+        <option>焼酎派</option><option>ハイボール派</option>
+        <option>ワイン派</option><option>なんでも飲む</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>一言コメント <span class="req">*</span></label>
+      <textarea id="edit-comment" maxlength="100"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeEditModal()">キャンセル</button>
+      <button class="btn btn-primary" style="flex:1" id="edit-submit-btn" onclick="submitEdit()">更新する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+// =============================================
+// ⚙️ 設定：GASウェブアプリのURLをここに入力
+// =============================================
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyRXfcExFNhBpRmPabhtHCY06YODYuUR00H3XeCaqQ7SeaNEbTBIkJYNBbAXDaLVMxB/exec';
+// =============================================
+
+let allMembers = [];
+let pendingAction = null; // { type: 'delete'|'edit', rowId, data? }
+
+// ===== ナビゲーション =====
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab')[name === 'list' ? 0 : 1].classList.add('active');
+  if (name === 'list') loadMembers();
+}
+
+// ===== TOAST =====
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isError ? ' error' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 3200);
+}
+
+// ===== 一覧取得 =====
+async function loadMembers() {
+  const container = document.getElementById('list-container');
+  container.innerHTML = '<div class="state-loading"><div class="spinner"></div><p>読み込み中…</p></div>';
+
+  try {
+    const res = await fetch(GAS_URL + '?action=list');
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || 'エラー');
+    allMembers = data.members || [];
+    renderCards(allMembers);
+  } catch (e) {
+    container.innerHTML = `
+      <div class="state-empty">
+        <span class="icon">⚠️</span>
+        <p>データを取得できませんでした。<br>GASのURLが正しいか確認してください。<br><small>${e.message}</small></p>
+      </div>`;
+  }
+}
+
+// ===== カード描画 =====
+function renderCards(members) {
+  const container = document.getElementById('list-container');
+  if (!members.length) {
+    container.innerHTML = `
+      <div class="state-empty">
+        <span class="icon">🍺</span>
+        <p>まだメンバーがいません。<br>あなたが最初に登録してみましょう！</p>
+      </div>`;
+    return;
+  }
+
+  const drinkEmoji = { 'ビール派':'🍺','日本酒派':'🍶','焼酎派':'🥃','ハイボール派':'🥂','ワイン派':'🍷','なんでも飲む':'🍻' };
+
+  container.innerHTML = '<div class="card-list">' +
+    members.map(m => {
+      const initial = (m.nickname || '?')[0];
+      const emoji = drinkEmoji[m.drink] || '🍻';
+      const dateStr = m.date ? m.date.slice(0, 10) : '';
+      const contact = m.contact
+        ? `<span class="tag">📱 ${escHtml(m.contact)}</span>`
+        : '';
+      return `
+        <div class="member-card" data-area="${escHtml(m.area)}" data-drink="${escHtml(m.drink)}">
+          <div class="card-header">
+            <div class="card-avatar">${escHtml(initial)}</div>
+            <div>
+              <div class="card-name">${escHtml(m.nickname)}</div>
+              <div class="card-date">${dateStr}</div>
+            </div>
+          </div>
+          <div class="card-tags">
+            <span class="tag tag-area">📍 ${escHtml(m.area)}</span>
+            <span class="tag tag-drink">${emoji} ${escHtml(m.drink)}</span>
+            ${contact}
+          </div>
+          <div class="card-comment">「${escHtml(m.comment)}」</div>
+          <div class="card-actions">
+            <button class="btn btn-ghost btn-sm" onclick="openEditAuth('${m.rowId}')">✏️ 修正</button>
+            <button class="btn btn-danger btn-sm" onclick="openDeleteAuth('${m.rowId}')">🗑 削除</button>
+          </div>
+        </div>`;
+    }).join('') +
+  '</div>';
+}
+
+// ===== フィルター =====
+function filterCards() {
+  const area = document.getElementById('filter-area').value;
+  const drink = document.getElementById('filter-drink').value;
+  const filtered = allMembers.filter(m =>
+    (!area || m.area === area) && (!drink || m.drink === drink)
+  );
+  renderCards(filtered);
+}
+
+function resetFilter() {
+  document.getElementById('filter-area').value = '';
+  document.getElementById('filter-drink').value = '';
+  renderCards(allMembers);
+}
+
+// ===== 新規登録 =====
+async function registerMember() {
+  const nickname = document.getElementById('reg-nickname').value.trim();
+  const contact  = document.getElementById('reg-contact').value.trim();
+  const area     = document.getElementById('reg-area').value;
+  const drink    = document.getElementById('reg-drink').value;
+  const comment  = document.getElementById('reg-comment').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const pwConf   = document.getElementById('reg-password-confirm').value;
+
+  if (!nickname) return showToast('ニックネームを入力してください', true);
+  if (!area)     return showToast('よく行くエリアを選択してください', true);
+  if (!drink)    return showToast('お酒の好みを選択してください', true);
+  if (!comment)  return showToast('一言コメントを入力してください', true);
+  if (!password) return showToast('編集用パスワードを入力してください', true);
+  if (password.length < 4) return showToast('パスワードは4文字以上で設定してください', true);
+  if (password !== pwConf)  return showToast('パスワードが一致しません', true);
+
+  const btn = document.getElementById('reg-btn');
+  btn.disabled = true;
+  btn.textContent = '登録中…';
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add', nickname, contact, area, drink, comment, password })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || '登録失敗');
+
+    showToast('✅ 登録しました！パスワードを忘れずに！');
+    // フォームリセット
+    ['reg-nickname','reg-contact','reg-comment','reg-password','reg-password-confirm']
+      .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('reg-area').value = '';
+    document.getElementById('reg-drink').value = '';
+    setTimeout(() => showSection('list'), 1200);
+  } catch (e) {
+    showToast('登録に失敗しました: ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🍺 登録する';
+  }
+}
+
+// ===== 削除：パスワード入力 =====
+function openDeleteAuth(rowId) {
+  pendingAction = { type: 'delete', rowId };
+  document.getElementById('modal-title').textContent = '投稿を削除';
+  document.getElementById('modal-desc').textContent = '登録時のパスワードを入力してください。削除すると元に戻せません。';
+  document.getElementById('modal-password').value = '';
+  document.getElementById('modal-submit-btn').textContent = '確認して削除';
+  document.getElementById('modal-submit-btn').className = 'btn btn-danger';
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('modal-password').focus(), 100);
+}
+
+// ===== 修正：パスワード入力 =====
+function openEditAuth(rowId) {
+  pendingAction = { type: 'edit', rowId };
+  document.getElementById('modal-title').textContent = '投稿を修正';
+  document.getElementById('modal-desc').textContent = '登録時のパスワードを入力してください。';
+  document.getElementById('modal-password').value = '';
+  document.getElementById('modal-submit-btn').textContent = '確認して編集へ';
+  document.getElementById('modal-submit-btn').className = 'btn btn-primary';
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('modal-password').focus(), 100);
+}
+
+// ===== モーダル：実行 =====
+async function modalSubmit() {
+  const pw = document.getElementById('modal-password').value;
+  if (!pw) return showToast('パスワードを入力してください', true);
+
+  const btn = document.getElementById('modal-submit-btn');
+  btn.disabled = true;
+
+  if (pendingAction.type === 'delete') {
+    await executeDelete(pendingAction.rowId, pw);
+  } else {
+    await openEditForm(pendingAction.rowId, pw);
+  }
+  btn.disabled = false;
+}
+
+// ===== 削除実行 =====
+async function executeDelete(rowId, password) {
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', rowId, password })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || '削除失敗');
+    closeModal();
+    showToast('🗑 削除しました');
+    loadMembers();
+  } catch (e) {
+    showToast('削除できませんでした: ' + e.message, true);
+    document.getElementById('modal-submit-btn').disabled = false;
+  }
+}
+
+// ===== 修正：フォームを開く =====
+async function openEditForm(rowId, password) {
+  // パスワード検証をGASに問い合わせ
+  try {
+    const res = await fetch(GAS_URL + `?action=verify&rowId=${encodeURIComponent(rowId)}&password=${encodeURIComponent(password)}`);
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || 'パスワードが違います');
+
+    // 現在のデータをフォームにセット
+    const m = data.member;
+    document.getElementById('edit-row-id').value = rowId;
+    document.getElementById('edit-password').value = password;
+    document.getElementById('edit-nickname').value = m.nickname || '';
+    document.getElementById('edit-contact').value = m.contact || '';
+    document.getElementById('edit-area').value = m.area || '';
+    document.getElementById('edit-drink').value = m.drink || '';
+    document.getElementById('edit-comment').value = m.comment || '';
+
+    closeModal();
+    document.getElementById('modal-edit-overlay').classList.add('open');
+  } catch (e) {
+    showToast(e.message, true);
+    document.getElementById('modal-submit-btn').disabled = false;
+  }
+}
+
+// ===== 修正実行 =====
+async function submitEdit() {
+  const rowId    = document.getElementById('edit-row-id').value;
+  const password = document.getElementById('edit-password').value;
+  const nickname = document.getElementById('edit-nickname').value.trim();
+  const contact  = document.getElementById('edit-contact').value.trim();
+  const area     = document.getElementById('edit-area').value;
+  const drink    = document.getElementById('edit-drink').value;
+  const comment  = document.getElementById('edit-comment').value.trim();
+
+  if (!nickname) return showToast('ニックネームを入力してください', true);
+  if (!area)     return showToast('エリアを選択してください', true);
+  if (!comment)  return showToast('コメントを入力してください', true);
+
+  const btn = document.getElementById('edit-submit-btn');
+  btn.disabled = true;
+  btn.textContent = '更新中…';
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', rowId, password, nickname, contact, area, drink, comment })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || '更新失敗');
+
+    closeEditModal();
+    showToast('✅ 更新しました');
+    loadMembers();
+  } catch (e) {
+    showToast('更新できませんでした: ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '更新する';
+  }
+}
+
+// ===== モーダル制御 =====
+function closeModal(event) {
+  if (event && event.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+  pendingAction = null;
+}
+
+function closeEditModal(event) {
+  if (event && event.target !== document.getElementById('modal-edit-overlay')) return;
+  document.getElementById('modal-edit-overlay').classList.remove('open');
+}
+
+// ===== エスケープ =====
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ===== 初期化 =====
+loadMembers();
+</script>
+
+</body>
+</html>
