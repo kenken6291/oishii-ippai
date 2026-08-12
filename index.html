@@ -1529,7 +1529,7 @@ function setStarRating(rowId, value) {
 async function apiPost(action, payload) {
   const res = await fetch(GAS_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain' }, // GASのCORSプリフライト回避のため text/plain を使用
     body: JSON.stringify({ action, token: session ? session.token : null, ...payload })
   });
   return res.json();
@@ -1814,7 +1814,7 @@ async function handleSignup() {
   try {
     const res = await fetch(GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' }, // GASのCORSプリフライト回避のため text/plain を使用
       body: JSON.stringify({ action: 'register', email, nickname, agreedTerms: agreed })
     });
     const data = await res.json();
@@ -1845,7 +1845,7 @@ async function handleLogin() {
   try {
     const res = await fetch(GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' }, // GASのCORSプリフライト回避のため text/plain を使用
       body: JSON.stringify({ action: 'login', email, password })
     });
     const data = await res.json();
@@ -1912,7 +1912,7 @@ async function handleForgotPassword() {
   try {
     const res = await fetch(GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' }, // GASのCORSプリフライト回避のため text/plain を使用
       body: JSON.stringify({ action: 'requestPasswordReset', email })
     });
     const data = await res.json();

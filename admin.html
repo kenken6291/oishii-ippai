@@ -848,7 +848,7 @@ async function submitEdit() {
   try {
     const res  = await fetch(GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' }, // GASのCORSプリフライト回避のため text/plain を使用
       body: JSON.stringify({ action: 'adminUpdate', adminPassword, rowId, nickname, contact, area, drink, comment })
     });
     const data = await res.json();
@@ -883,7 +883,7 @@ async function submitDelete() {
   try {
     const res  = await fetch(GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' }, // GASのCORSプリフライト回避のため text/plain を使用
       body: JSON.stringify({ action: 'adminDelete', adminPassword, rowId })
     });
     const data = await res.json();
