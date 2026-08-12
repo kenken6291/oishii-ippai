@@ -36,7 +36,7 @@ https://docs.google.com/spreadsheets/d/【ここがID】/edit
 ```
 
 > ✅ シート（users / members / favorites / reviews）はGASが自動作成します。手動でシートを作る必要はありません。
-> ⚠️ 既存の「members」シートがある場合は、列構成が変わる（storeUrl・photoUrl列が追加）ため、**投稿データを一度リセット（全行削除、ヘッダー行のみ残す）**してから移行してください。すでに会員認証システム版を導入済みで投稿データを残したい場合は、H列・I列に `storeUrl` `photoUrl` を手動で挿入し、既存の日時列を1列右にずらしてください。
+> ⚠️ 既存の「members」シートがある場合は、列構成が変わる（storeName・storeUrl・photoUrl列が追加）ため、**投稿データを一度リセット（全行削除、ヘッダー行のみ残す）**してから移行してください。すでに写真/URL機能まで導入済みで投稿データを残したい場合は、H列に `storeName` を手動で挿入し、既存のstoreUrl・photoUrl・日時の各列を1列ずつ右にずらしてください。
 
 ---
 
@@ -163,9 +163,10 @@ const GAS_URL = 'YOUR_GAS_WEB_APP_URL_HERE';
 | E | area |
 | F | drink |
 | G | comment |
-| H | storeUrl |
-| I | photoUrl |
-| J | date |
+| H | storeName |
+| I | storeUrl |
+| J | photoUrl |
+| K | date |
 
 **favorites**
 

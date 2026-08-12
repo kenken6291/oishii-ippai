@@ -784,6 +784,30 @@
     .login-prompt .btn-group { display: flex; gap: 10px; justify-content: center; }
 
     /* ===== 写真アップロード ===== */
+    /* ===== お店情報セクション ===== */
+    .store-section {
+      grid-column: 1 / -1;
+      margin: 6px 0 4px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--washi-mid);
+    }
+    .store-section-title {
+      font-family: var(--font-serif);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .store-section-desc {
+      font-size: 11px;
+      color: var(--ash);
+      margin-bottom: 14px;
+      line-height: 1.6;
+    }
+
     .photo-upload {
       border: 1.5px dashed #D5CCBB;
       border-radius: var(--radius);
@@ -829,6 +853,17 @@
       font-weight: 500;
     }
     .store-link:hover { text-decoration: underline; }
+
+    .card-store-name {
+      font-family: var(--font-serif);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--red-dark);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 10px;
+    }
 
     /* ===== 星評価 ===== */
     .stars-display {
@@ -1160,6 +1195,16 @@
           <textarea id="reg-comment" placeholder="例：新橋のガード下が大好きです。一緒に串焼きとホッピーを楽しみましょう！" maxlength="100"></textarea>
         </div>
 
+        <div class="store-section">
+          <div class="store-section-title">🏪 お店情報</div>
+          <div class="store-section-desc">よく行くお気に入りのお店があれば登録してください（すべて任意です）。</div>
+        </div>
+
+        <div class="field full">
+          <label>お店の名前<span class="hint">任意・最大40文字</span></label>
+          <input type="text" id="reg-store-name" placeholder="例：magome" maxlength="40" />
+        </div>
+
         <div class="field full">
           <label>お店のURL<span class="hint">任意</span></label>
           <input type="text" id="reg-store-url" placeholder="https://..." />
@@ -1427,6 +1472,13 @@
       <label>一言コメント <span class="req">*</span></label>
       <textarea id="edit-comment" maxlength="100"></textarea>
     </div>
+    <div class="store-section">
+      <div class="store-section-title">🏪 お店情報</div>
+    </div>
+    <div class="field">
+      <label>お店の名前<span class="hint">任意・最大40文字</span></label>
+      <input type="text" id="edit-store-name" maxlength="40" placeholder="例：magome" />
+    </div>
     <div class="field">
       <label>お店のURL<span class="hint">任意</span></label>
       <input type="text" id="edit-store-url" placeholder="https://..." />
@@ -1452,7 +1504,7 @@
 // =============================================
 // ⚙️ 設定：GASウェブアプリのURLをここに入力
 // =============================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwkuWFjNKLmZ6pJa991fjmU9IbG_UFImRM01sl3xfY_sUPCBSqNHBL4gplnUR9oklwOTg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyRXfcExFNhBpRmPabhtHCY06YODYuUR00H3XeCaqQ7SeaNEbTBIkJYNBbAXDaLVMxB/exec';
 // =============================================
 
 let allMembers = [];
@@ -1755,6 +1807,7 @@ function renderCards(members) {
             ${contact}
           </div>
           ${m.photoUrl ? `<img class="card-photo" src="${escHtml(m.photoUrl)}" alt="お店の写真" loading="lazy" />` : ''}
+          ${m.storeName ? `<div class="card-store-name">🏪 ${escHtml(m.storeName)}</div>` : ''}
           <div class="card-comment">「${escHtml(m.comment)}」</div>
           ${m.storeUrl ? `<a class="store-link" href="${escHtml(m.storeUrl)}" target="_blank" rel="noopener noreferrer">🔗 お店のページを見る</a>` : ''}
           <div style="margin-top:10px;">
@@ -2130,11 +2183,12 @@ function openMyPageModal() {
 async function registerMember() {
   if (!session) return showToast('ログインが必要です', true);
 
-  const contact  = document.getElementById('reg-contact').value.trim();
-  const area     = document.getElementById('reg-area').value;
-  const drink    = document.getElementById('reg-drink').value;
-  const comment  = document.getElementById('reg-comment').value.trim();
-  const storeUrl = document.getElementById('reg-store-url').value.trim();
+  const contact   = document.getElementById('reg-contact').value.trim();
+  const area      = document.getElementById('reg-area').value;
+  const drink     = document.getElementById('reg-drink').value;
+  const comment   = document.getElementById('reg-comment').value.trim();
+  const storeName = document.getElementById('reg-store-name').value.trim();
+  const storeUrl  = document.getElementById('reg-store-url').value.trim();
 
   if (!area)     return showToast('よく行くエリアを選択してください', true);
   if (!drink)    return showToast('お酒の好みを選択してください', true);
@@ -2146,7 +2200,7 @@ async function registerMember() {
   btn.textContent = regPhotoBase64 ? '写真をアップロード中…' : '登録中…';
 
   try {
-    const payload = { contact, area, drink, comment, storeUrl };
+    const payload = { contact, area, drink, comment, storeName, storeUrl };
     if (regPhotoBase64) {
       payload.photoBase64 = regPhotoBase64;
       payload.photoMimeType = regPhotoMime;
@@ -2155,7 +2209,7 @@ async function registerMember() {
     if (data.status !== 'ok') throw new Error(data.message || '登録失敗');
 
     showToast('✅ 登録しました！');
-    ['reg-contact','reg-comment','reg-store-url'].forEach(id => document.getElementById(id).value = '');
+    ['reg-contact','reg-comment','reg-store-name','reg-store-url'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('reg-area').value = '';
     document.getElementById('reg-drink').value = '';
     document.getElementById('reg-photo-input').value = '';
@@ -2181,6 +2235,7 @@ function openEditForm(rowId) {
   document.getElementById('edit-area').value = m.area || '';
   document.getElementById('edit-drink').value = m.drink || '';
   document.getElementById('edit-comment').value = m.comment || '';
+  document.getElementById('edit-store-name').value = m.storeName || '';
   document.getElementById('edit-store-url').value = m.storeUrl || '';
 
   // 写真関連の状態をリセットし、既存写真をプレビュー表示
@@ -2205,12 +2260,13 @@ function openEditForm(rowId) {
 
 // ===== 修正実行 =====
 async function submitEdit() {
-  const rowId    = document.getElementById('edit-row-id').value;
-  const contact  = document.getElementById('edit-contact').value.trim();
-  const area     = document.getElementById('edit-area').value;
-  const drink    = document.getElementById('edit-drink').value;
-  const comment  = document.getElementById('edit-comment').value.trim();
-  const storeUrl = document.getElementById('edit-store-url').value.trim();
+  const rowId     = document.getElementById('edit-row-id').value;
+  const contact   = document.getElementById('edit-contact').value.trim();
+  const area      = document.getElementById('edit-area').value;
+  const drink     = document.getElementById('edit-drink').value;
+  const comment   = document.getElementById('edit-comment').value.trim();
+  const storeName = document.getElementById('edit-store-name').value.trim();
+  const storeUrl  = document.getElementById('edit-store-url').value.trim();
 
   if (!area)     return showToast('エリアを選択してください', true);
   if (!comment)  return showToast('コメントを入力してください', true);
@@ -2221,7 +2277,7 @@ async function submitEdit() {
   btn.textContent = editPhotoBase64 ? '写真をアップロード中…' : '更新中…';
 
   try {
-    const payload = { rowId, contact, area, drink, comment, storeUrl };
+    const payload = { rowId, contact, area, drink, comment, storeName, storeUrl };
     if (editPhotoBase64) {
       payload.photoBase64 = editPhotoBase64;
       payload.photoMimeType = editPhotoMime;
@@ -2314,7 +2370,7 @@ function renderBest100Lists() {
   sourceEl.innerHTML = candidates.length
     ? candidates.map(m => `
         <div class="best100-source-item">
-          <span class="name">${escHtml(m.nickname)}<span class="area-mini">（${escHtml(m.area)}・${escHtml(m.drink)}）</span></span>
+          <span class="name">${m.storeName ? escHtml(m.storeName) : escHtml(m.nickname)}<span class="area-mini">（${escHtml(m.area)}・${escHtml(m.drink)}）</span></span>
           <button class="btn btn-ghost btn-sm" onclick="addToRanking('${m.rowId}')" ${myRankingRowIds.length >= MAX_RANKING_ITEMS ? 'disabled' : ''}>＋ 追加</button>
         </div>`).join('')
     : '<p class="best100-empty-text">追加できる候補がありません。</p>';
@@ -2326,7 +2382,7 @@ function renderBest100Lists() {
         return `
           <div class="best100-rank-item">
             <span class="rank-num">${idx + 1}位</span>
-            <span class="name">${escHtml(m.nickname)}</span>
+            <span class="name">${m.storeName ? escHtml(m.storeName) : escHtml(m.nickname)}</span>
             <span class="rank-controls">
               <button onclick="moveRankingItem('${rowId}', -1)" ${idx === 0 ? 'disabled' : ''} title="上へ">↑</button>
               <button onclick="moveRankingItem('${rowId}', 1)" ${idx === myRankingRowIds.length - 1 ? 'disabled' : ''} title="下へ">↓</button>

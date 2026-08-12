@@ -25,9 +25,10 @@
  *   E: area
  *   F: drink
  *   G: comment          （投稿者の一言コメント）
- *   H: storeUrl         （お店のURL・任意）
- *   I: photoUrl         （Googleドライブ上の写真URL・任意）
- *   J: date
+ *   H: storeName        （お店の名前・任意）
+ *   I: storeUrl         （お店のURL・任意）
+ *   J: photoUrl         （Googleドライブ上の写真URL・任意）
+ *   K: date
  *
  * ■ favorites シート
  *   A: userId
@@ -390,16 +391,18 @@ function handleAdd(body) {
   var user = findUserById(session.userId);
   if (!user) return jsonResponse({ status: 'error', message: 'ユーザーが見つかりません' });
 
-  var contact  = sanitize(body.contact);
-  var area     = sanitize(body.area);
-  var drink    = sanitize(body.drink);
-  var comment  = sanitize(body.comment);
-  var storeUrl = sanitizeUrl(body.storeUrl);
+  var contact   = sanitize(body.contact);
+  var area      = sanitize(body.area);
+  var drink     = sanitize(body.drink);
+  var comment   = sanitize(body.comment);
+  var storeName = sanitize(body.storeName);
+  var storeUrl  = sanitizeUrl(body.storeUrl);
 
   if (!area)    return jsonResponse({ status: 'error', message: 'よく行くエリアを選択してください' });
   if (!drink)   return jsonResponse({ status: 'error', message: 'お酒の好みを選択してください' });
   if (!comment) return jsonResponse({ status: 'error', message: '一言コメントを入力してください' });
   if (comment.length > 100) return jsonResponse({ status: 'error', message: 'コメントが長すぎます' });
+  if (storeName.length > 40) return jsonResponse({ status: 'error', message: 'お店の名前が長すぎます' });
   if (body.storeUrl && !storeUrl) return jsonResponse({ status: 'error', message: 'お店のURLの形式が正しくありません' });
 
   var photoUrl = '';
@@ -411,7 +414,7 @@ function handleAdd(body) {
 
   var sheet = getMembersSheet();
   var rowId = Utilities.getUuid();
-  sheet.appendRow([rowId, session.userId, user.nickname, contact, area, drink, comment, storeUrl, photoUrl, new Date()]);
+  sheet.appendRow([rowId, session.userId, user.nickname, contact, area, drink, comment, storeName, storeUrl, photoUrl, new Date()]);
 
   return jsonResponse({ status: 'ok', message: '登録しました', rowId: rowId, photoUrl: photoUrl });
 }
@@ -429,20 +432,22 @@ function handleUpdate(body) {
     return jsonResponse({ status: 'error', message: '自分の投稿のみ編集できます' });
   }
 
-  var contact  = sanitize(body.contact);
-  var area     = sanitize(body.area);
-  var drink    = sanitize(body.drink);
-  var comment  = sanitize(body.comment);
-  var storeUrl = sanitizeUrl(body.storeUrl);
+  var contact   = sanitize(body.contact);
+  var area      = sanitize(body.area);
+  var drink     = sanitize(body.drink);
+  var comment   = sanitize(body.comment);
+  var storeName = sanitize(body.storeName);
+  var storeUrl  = sanitizeUrl(body.storeUrl);
 
   if (!area)    return jsonResponse({ status: 'error', message: 'エリアを選択してください' });
   if (!drink)   return jsonResponse({ status: 'error', message: 'お酒の好みを選択してください' });
   if (!comment) return jsonResponse({ status: 'error', message: 'コメントを入力してください' });
   if (comment.length > 100) return jsonResponse({ status: 'error', message: 'コメントが長すぎます' });
+  if (storeName.length > 40) return jsonResponse({ status: 'error', message: 'お店の名前が長すぎます' });
   if (body.storeUrl && !storeUrl) return jsonResponse({ status: 'error', message: 'お店のURLの形式が正しくありません' });
 
   var sheet = getMembersSheet();
-  var photoUrl = result.rowData[8]; // 既存の写真を維持
+  var photoUrl = result.rowData[9]; // 既存の写真を維持
 
   if (body.photoBase64) {
     var photoResult = savePhotoToDrive(body.photoBase64, body.photoMimeType, session.userId);
@@ -454,12 +459,13 @@ function handleUpdate(body) {
     photoUrl = '';
   }
 
-  sheet.getRange(result.rowIndex, 4).setValue(contact);   // D: contact
-  sheet.getRange(result.rowIndex, 5).setValue(area);      // E: area
-  sheet.getRange(result.rowIndex, 6).setValue(drink);     // F: drink
-  sheet.getRange(result.rowIndex, 7).setValue(comment);   // G: comment
-  sheet.getRange(result.rowIndex, 8).setValue(storeUrl);  // H: storeUrl
-  sheet.getRange(result.rowIndex, 9).setValue(photoUrl);  // I: photoUrl
+  sheet.getRange(result.rowIndex, 4).setValue(contact);    // D: contact
+  sheet.getRange(result.rowIndex, 5).setValue(area);       // E: area
+  sheet.getRange(result.rowIndex, 6).setValue(drink);      // F: drink
+  sheet.getRange(result.rowIndex, 7).setValue(comment);    // G: comment
+  sheet.getRange(result.rowIndex, 8).setValue(storeName);  // H: storeName
+  sheet.getRange(result.rowIndex, 9).setValue(storeUrl);   // I: storeUrl
+  sheet.getRange(result.rowIndex, 10).setValue(photoUrl);  // J: photoUrl
 
   return jsonResponse({ status: 'ok', message: '更新しました', photoUrl: photoUrl });
 }
@@ -477,7 +483,7 @@ function handleDelete(body) {
     return jsonResponse({ status: 'error', message: '自分の投稿のみ削除できます' });
   }
 
-  deleteDrivePhotoByUrl(result.rowData[8]);
+  deleteDrivePhotoByUrl(result.rowData[9]);
   getMembersSheet().deleteRow(result.rowIndex);
   deleteReviewsByRowId(body.rowId);
   deleteRankingsByRowId(body.rowId);
@@ -759,12 +765,13 @@ function handleAdminUpdate(body) {
   var result = findMemberRowById(body.rowId);
   if (!result.ok) return jsonResponse({ status: 'error', message: result.message });
 
-  var contact = sanitize(body.contact);
-  var area    = sanitize(body.area);
-  var drink   = sanitize(body.drink);
-  var comment = sanitize(body.comment);
-  var nickname = sanitize(body.nickname);
-  var storeUrl = sanitizeUrl(body.storeUrl);
+  var contact   = sanitize(body.contact);
+  var area      = sanitize(body.area);
+  var drink     = sanitize(body.drink);
+  var comment   = sanitize(body.comment);
+  var nickname  = sanitize(body.nickname);
+  var storeName = sanitize(body.storeName);
+  var storeUrl  = sanitizeUrl(body.storeUrl);
 
   if (!nickname || !area || !drink || !comment) {
     return jsonResponse({ status: 'error', message: '必須項目が不足しています' });
@@ -776,7 +783,8 @@ function handleAdminUpdate(body) {
   sheet.getRange(result.rowIndex, 5).setValue(area);
   sheet.getRange(result.rowIndex, 6).setValue(drink);
   sheet.getRange(result.rowIndex, 7).setValue(comment);
-  sheet.getRange(result.rowIndex, 8).setValue(storeUrl);
+  sheet.getRange(result.rowIndex, 8).setValue(storeName);
+  sheet.getRange(result.rowIndex, 9).setValue(storeUrl);
 
   return jsonResponse({ status: 'ok', message: '更新しました' });
 }
@@ -788,7 +796,7 @@ function handleAdminDelete(body) {
   var result = findMemberRowById(body.rowId);
   if (!result.ok) return jsonResponse({ status: 'error', message: result.message });
 
-  deleteDrivePhotoByUrl(result.rowData[8]);
+  deleteDrivePhotoByUrl(result.rowData[9]);
   getMembersSheet().deleteRow(result.rowIndex);
   deleteReviewsByRowId(body.rowId);
   deleteRankingsByRowId(body.rowId);
@@ -884,9 +892,10 @@ function rowToMember(row, ratingMap, hensachiMap) {
     area:      String(row[4]),
     drink:     String(row[5]),
     comment:   String(row[6]),
-    storeUrl:  String(row[7] || ''),
-    photoUrl:  String(row[8] || ''),
-    date:      row[9] ? Utilities.formatDate(new Date(row[9]), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm') : '',
+    storeName: String(row[7] || ''),
+    storeUrl:  String(row[8] || ''),
+    photoUrl:  String(row[9] || ''),
+    date:      row[10] ? Utilities.formatDate(new Date(row[10]), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm') : '',
     avgRating: avgRating,
     reviewCount: reviewCount,
     rankScore: rankStats ? rankStats.score : null,     // ベスト100集計点（1位=100点〜100位=1点の合計）
@@ -907,7 +916,7 @@ function deletePhotosForUserPosts(userId) {
   var sheet = getMembersSheet();
   var data  = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
-    if (data[i][1] === userId && data[i][8]) deleteDrivePhotoByUrl(data[i][8]);
+    if (data[i][1] === userId && data[i][9]) deleteDrivePhotoByUrl(data[i][9]);
   }
 }
 
@@ -1026,7 +1035,7 @@ function getMembersSheet() {
   var sheet = ss.getSheetByName(SHEET_MEMBERS);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_MEMBERS);
-    sheet.appendRow(['rowId','userId','nickname','contact','area','drink','comment','storeUrl','photoUrl','date']);
+    sheet.appendRow(['rowId','userId','nickname','contact','area','drink','comment','storeName','storeUrl','photoUrl','date']);
     sheet.setFrozenRows(1);
   }
   return sheet;
