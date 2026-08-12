@@ -1806,7 +1806,7 @@ function renderCards(members) {
             <span class="tag tag-drink">${emoji} ${escHtml(m.drink)}</span>
             ${contact}
           </div>
-          ${m.photoUrl ? `<img class="card-photo" src="${escHtml(m.photoUrl)}" alt="お店の写真" loading="lazy" />` : ''}
+          ${m.photoUrl ? `<img class="card-photo" src="${escHtml(toDriveViewableUrl(m.photoUrl))}" alt="お店の写真" loading="lazy" />` : ''}
           ${m.storeName ? `<div class="card-store-name">🏪 ${escHtml(m.storeName)}</div>` : ''}
           <div class="card-comment">「${escHtml(m.comment)}」</div>
           ${m.storeUrl ? `<a class="store-link" href="${escHtml(m.storeUrl)}" target="_blank" rel="noopener noreferrer">🔗 お店のページを見る</a>` : ''}
@@ -2246,7 +2246,7 @@ function openEditForm(rowId) {
   const preview = document.getElementById('edit-photo-preview');
   const removeLink = document.getElementById('edit-photo-remove-link');
   if (m.photoUrl) {
-    preview.src = m.photoUrl;
+    preview.src = toDriveViewableUrl(m.photoUrl);
     preview.style.display = 'block';
     removeLink.style.display = 'block';
   } else {
@@ -2438,6 +2438,16 @@ async function saveMyRanking() {
 }
 
 // ===== エスケープ =====
+// ===== Googleドライブ画像URLの変換 =====
+// 'uc?export=view&id=XXX' 形式は <img> 埋め込みで読み込みに失敗しやすいため、
+// 表示直前に 'thumbnail?id=XXX' 形式へ変換する（過去に保存された古い形式のURLにも対応）
+function toDriveViewableUrl(url) {
+  if (!url) return url;
+  const match = String(url).match(/id=([a-zA-Z0-9_-]+)/);
+  if (!match) return url;
+  return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+}
+
 function escHtml(str) {
   if (!str) return '';
   return String(str)

@@ -988,7 +988,9 @@ function savePhotoToDrive(base64Data, mimeType, userId) {
     var file = folder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-    var url = 'https://drive.google.com/uc?export=view&id=' + file.getId();
+    // 'uc?export=view' 形式は <img> への直接埋め込みで読み込みに失敗しやすいため、
+    // より確実に表示できる 'thumbnail' 形式のURLを使用する
+    var url = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1000';
     return { ok: true, url: url, fileId: file.getId() };
   } catch (err) {
     return { ok: false, message: '写真のアップロードに失敗しました: ' + err.message };
