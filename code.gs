@@ -45,6 +45,14 @@
  *   H: updatedAt
  *   ※ 1会員につき1投稿に対して1レビューまで（再投稿は上書き更新）
  *
+ * ■ rankings シート（会員ごとの「おすすめベスト100」）
+ *   A: userId
+ *   B: rowId            （ランクインした投稿のrowId）
+ *   C: rank              （1〜100の順位。1位が最上位）
+ *   D: updatedAt
+ *   ※ 得点は 101-rank（1位=100点、100位=1点）として集計時に計算する
+ *   ※ 1会員のベスト100は毎回全件洗い替え（保存時に既存分を削除して作り直す）
+ *
  * ============================================================
  */
 
@@ -67,6 +75,7 @@ var SHEET_USERS      = 'users';
 var SHEET_MEMBERS    = 'members';
 var SHEET_FAVORITES  = 'favorites';
 var SHEET_REVIEWS    = 'reviews';
+var SHEET_RANKINGS   = 'rankings';
 
 // ▼ パスワードハッシュ用の秘密文字列は上の requireProp('PEPPER') で読み込み済み
 
@@ -81,6 +90,9 @@ var PHOTO_FOLDER_ID = SCRIPT_PROPS.getProperty('PHOTO_FOLDER_ID') || '';
 
 // ▼ 写真1枚あたりの最大サイズ（バイト）。フロント側で縮小済みの前提だが念のための上限
 var MAX_PHOTO_BYTES = 4 * 1024 * 1024; // 4MB
+
+// ▼ ベスト100ランキングの最大登録件数
+var MAX_RANKING_ITEMS = 100;
 
 // スクリプトプロパティが未設定の場合にエラーで気づけるようにするヘルパー
 function requireProp(key) {
@@ -104,6 +116,7 @@ function doGet(e) {
     if (action === 'myFavorites')   return handleMyFavorites(e.parameter.token);
     if (action === 'me')            return handleMe(e.parameter.token);
     if (action === 'reviews')       return handleListReviews(e.parameter.rowId);
+    if (action === 'myRanking')     return handleMyRanking(e.parameter.token);
     return jsonResponse({ status: 'error', message: '不正なアクションです' });
   } catch (err) {
     return jsonResponse({ status: 'error', message: err.message });
@@ -145,6 +158,9 @@ function doPost(e) {
     // --- レビュー（コメント＋5段階評価） ---
     if (action === 'submitReview') return handleSubmitReview(body);
     if (action === 'deleteReview') return handleDeleteReview(body);
+
+    // --- おすすめベスト100 ---
+    if (action === 'saveMyRanking') return handleSaveMyRanking(body);
 
     // --- 管理者 ---
     if (action === 'adminUpdate') return handleAdminUpdate(body);
@@ -338,6 +354,7 @@ function handleDeleteAccount(body) {
   deleteMembersByUser(session.userId);
   deleteFavoritesByUser(session.userId);
   deleteReviewsByUser(session.userId);
+  deleteRankingsByUser(session.userId);
 
   CacheService.getScriptCache().remove('session_' + body.token);
   return jsonResponse({ status: 'ok', message: '退会処理が完了しました。ご利用ありがとうございました。' });
@@ -351,13 +368,14 @@ function handleList() {
   var data  = sheet.getDataRange().getValues();
   if (data.length <= 1) return jsonResponse({ status: 'ok', members: [] });
 
-  var ratingMap = buildRatingMap();
+  var ratingMap  = buildRatingMap();
+  var hensachiMap = buildHensachiMap();
 
   var members = [];
   for (var i = data.length - 1; i >= 1; i--) {
     var row = data[i];
     if (!row[0]) continue;
-    members.push(rowToMember(row, ratingMap));
+    members.push(rowToMember(row, ratingMap, hensachiMap));
   }
   return jsonResponse({ status: 'ok', members: members });
 }
@@ -462,6 +480,7 @@ function handleDelete(body) {
   deleteDrivePhotoByUrl(result.rowData[8]);
   getMembersSheet().deleteRow(result.rowIndex);
   deleteReviewsByRowId(body.rowId);
+  deleteRankingsByRowId(body.rowId);
 
   return jsonResponse({ status: 'ok', message: '削除しました' });
 }
@@ -602,6 +621,125 @@ function buildRatingMap() {
 }
 
 // ============================================================
+// おすすめベスト100（会員ごとに1〜100位のランキングを登録。
+// 1位=100点、100位=1点（101-rank）として全会員分を合計し、
+// その合計点をもとに偏差値を算出する）
+// ============================================================
+
+// ベスト100を丸ごと保存（既存分は全削除して作り直す＝洗い替え）
+function handleSaveMyRanking(body) {
+  var session = getSession(body.token);
+  if (!session) return jsonResponse({ status: 'error', message: 'ログインが必要です' });
+
+  var rowIds = body.rowIds;
+  if (!Array.isArray(rowIds)) return jsonResponse({ status: 'error', message: 'rowIdsが不正です' });
+  if (rowIds.length > MAX_RANKING_ITEMS) {
+    return jsonResponse({ status: 'error', message: 'ベスト' + MAX_RANKING_ITEMS + 'までしか登録できません' });
+  }
+
+  // 重複除去＋実在する投稿のみに絞る
+  var seen = {};
+  var validRowIds = [];
+  rowIds.forEach(function(rowId) {
+    if (seen[rowId]) return;
+    seen[rowId] = true;
+    if (findMemberRowById(rowId).ok) validRowIds.push(rowId);
+  });
+
+  var sheet = getRankingsSheet();
+  var data = sheet.getDataRange().getValues();
+  var now = new Date();
+
+  // 既存の自分の行を全削除
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === session.userId) sheet.deleteRow(i + 1);
+  }
+
+  // 1位から順に書き込み（rank = 配列のインデックス+1）
+  validRowIds.forEach(function(rowId, index) {
+    sheet.appendRow([session.userId, rowId, index + 1, now]);
+  });
+
+  return jsonResponse({ status: 'ok', message: 'ベスト100を保存しました', count: validRowIds.length });
+}
+
+// 自分のベスト100を取得（rowId→rankの配列を、rank昇順で返す）
+function handleMyRanking(token) {
+  var session = getSession(token);
+  if (!session) return jsonResponse({ status: 'error', message: 'ログインが必要です' });
+
+  var sheet = getRankingsSheet();
+  var data = sheet.getDataRange().getValues();
+  var items = [];
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] === session.userId) {
+      items.push({ rowId: data[i][1], rank: Number(data[i][2]) });
+    }
+  }
+  items.sort(function(a, b) { return a.rank - b.rank; });
+  return jsonResponse({ status: 'ok', items: items });
+}
+
+// 全会員のランキングを集計し、投稿(rowId)ごとの合計点を算出
+// score = Σ(101 - rank)  ※1位=100点、100位=1点
+function buildRankingScoreMap() {
+  var sheet = getRankingsSheet();
+  var data = sheet.getDataRange().getValues();
+  var map = {}; // rowId -> { score, voterCount }
+  for (var i = 1; i < data.length; i++) {
+    var rowId = data[i][1];
+    var rank = Number(data[i][2]);
+    if (!rank || rank < 1 || rank > MAX_RANKING_ITEMS) continue;
+    var points = (MAX_RANKING_ITEMS + 1) - rank; // 1位=100点, 100位=1点
+    if (!map[rowId]) map[rowId] = { score: 0, voterCount: 0 };
+    map[rowId].score += points;
+    map[rowId].voterCount += 1;
+  }
+  return map;
+}
+
+// 合計点の分布から偏差値（平均50・標準偏差10）を算出
+// 母集団は「誰かのベスト100に1回以上ランクインした投稿」のみ
+function buildHensachiMap() {
+  var scoreMap = buildRankingScoreMap();
+  var rowIds = Object.keys(scoreMap);
+  if (rowIds.length === 0) return {};
+
+  var scores = rowIds.map(function(id) { return scoreMap[id].score; });
+  var mean = scores.reduce(function(a, b) { return a + b; }, 0) / scores.length;
+  var variance = scores.reduce(function(a, b) { return a + Math.pow(b - mean, 2); }, 0) / scores.length;
+  var stddev = Math.sqrt(variance);
+
+  var result = {};
+  rowIds.forEach(function(rowId) {
+    var score = scoreMap[rowId].score;
+    var hensachi = (stddev === 0) ? 50 : 50 + 10 * (score - mean) / stddev;
+    result[rowId] = {
+      score: score,
+      voterCount: scoreMap[rowId].voterCount,
+      hensachi: Math.round(hensachi * 10) / 10
+    };
+  });
+  return result;
+}
+
+function deleteRankingsByUser(userId) {
+  var sheet = getRankingsSheet();
+  var data = sheet.getDataRange().getValues();
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === userId) sheet.deleteRow(i + 1);
+  }
+}
+
+function deleteRankingsByRowId(rowId) {
+  var sheet = getRankingsSheet();
+  var data = sheet.getDataRange().getValues();
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][1] === rowId) sheet.deleteRow(i + 1);
+  }
+}
+
+// ============================================================
 // 管理者：一覧取得
 // ============================================================
 function handleAdminList(adminPassword) {
@@ -653,6 +791,7 @@ function handleAdminDelete(body) {
   deleteDrivePhotoByUrl(result.rowData[8]);
   getMembersSheet().deleteRow(result.rowIndex);
   deleteReviewsByRowId(body.rowId);
+  deleteRankingsByRowId(body.rowId);
 
   return jsonResponse({ status: 'ok', message: '削除しました' });
 }
@@ -729,11 +868,13 @@ function findMemberRowById(rowId) {
   return { ok: false, message: '投稿が見つかりません' };
 }
 
-function rowToMember(row, ratingMap) {
+function rowToMember(row, ratingMap, hensachiMap) {
   var rowId = String(row[0]);
   var stats = (ratingMap && ratingMap[rowId]) ? ratingMap[rowId] : null;
   var avgRating = stats ? Math.round((stats.sum / stats.count) * 10) / 10 : null;
   var reviewCount = stats ? stats.count : 0;
+
+  var rankStats = (hensachiMap && hensachiMap[rowId]) ? hensachiMap[rowId] : null;
 
   return {
     rowId:     rowId,
@@ -747,7 +888,10 @@ function rowToMember(row, ratingMap) {
     photoUrl:  String(row[8] || ''),
     date:      row[9] ? Utilities.formatDate(new Date(row[9]), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm') : '',
     avgRating: avgRating,
-    reviewCount: reviewCount
+    reviewCount: reviewCount,
+    rankScore: rankStats ? rankStats.score : null,     // ベスト100集計点（1位=100点〜100位=1点の合計）
+    rankVoterCount: rankStats ? rankStats.voterCount : 0, // 何人のベスト100にランクインしているか
+    hensachi:  rankStats ? rankStats.hensachi : null   // ランキング得点を基準にした偏差値
   };
 }
 
@@ -905,6 +1049,17 @@ function getReviewsSheet() {
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_REVIEWS);
     sheet.appendRow(['reviewId','rowId','userId','nickname','rating','comment','createdAt','updatedAt']);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function getRankingsSheet() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(SHEET_RANKINGS);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_RANKINGS);
+    sheet.appendRow(['userId','rowId','rank','updatedAt']);
     sheet.setFrozenRows(1);
   }
   return sheet;

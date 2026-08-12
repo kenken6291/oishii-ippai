@@ -905,6 +905,94 @@
     .review-form textarea { min-height: 50px; font-size: 12px; }
     .no-review-text { font-size: 12px; color: var(--ash); padding: 8px 0; }
 
+    /* ===== ベスト100 ===== */
+    .best100-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 780px) {
+      .best100-layout { grid-template-columns: 1fr; }
+    }
+
+    .best100-panel {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--washi-mid);
+      padding: 18px;
+      max-height: 560px;
+      overflow-y: auto;
+    }
+    .best100-panel h4 {
+      font-family: var(--font-serif);
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      color: var(--ink);
+      position: sticky;
+      top: 0;
+      background: var(--card-bg);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--washi-mid);
+    }
+
+    .best100-source-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 6px;
+      border-bottom: 1px solid var(--washi);
+      font-size: 13px;
+    }
+    .best100-source-item .name { flex: 1; }
+    .best100-source-item .area-mini { font-size: 11px; color: var(--ash); }
+
+    .best100-rank-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 6px;
+      border-bottom: 1px solid var(--washi);
+      font-size: 13px;
+    }
+    .best100-rank-item .rank-num {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      color: var(--red);
+      width: 28px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .best100-rank-item .name { flex: 1; }
+    .best100-rank-item .rank-controls { display: flex; gap: 2px; flex-shrink: 0; }
+    .best100-rank-item .rank-controls button {
+      background: none;
+      border: 1px solid var(--washi-mid);
+      border-radius: 3px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--ash);
+    }
+    .best100-rank-item .rank-controls button:hover { background: var(--washi-mid); color: var(--ink); }
+    .best100-rank-item .rank-controls button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .best100-empty-text { font-size: 12px; color: var(--ash); padding: 12px 4px; }
+
+    .hensachi-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--white);
+      background: var(--ink);
+      border-radius: 20px;
+      padding: 2px 9px;
+      margin-left: 8px;
+    }
+    .hensachi-badge .val { color: var(--gold-light); }
+
     h4.mypage-sub {
       font-family: var(--font-serif);
       font-size: 0.95rem;
@@ -955,6 +1043,7 @@
     <nav class="nav-tabs">
       <button class="nav-tab active" onclick="showSection('list')">🍶 メンバー一覧</button>
       <button class="nav-tab" onclick="showSection('register')">✏️ 投稿する</button>
+      <button class="nav-tab" onclick="showSection('best100')">🏆 ベスト100</button>
     </nav>
   </div>
 </header>
@@ -1091,6 +1180,49 @@
           </button>
         </div>
 
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== BEST100 SECTION ===== -->
+  <section id="section-best100" class="section">
+    <div class="section-head">
+      <h2>🏆 みんなのおすすめベスト100</h2>
+      <div class="section-head-line"></div>
+    </div>
+
+    <div id="best100-login-prompt" class="login-prompt" style="display:none;">
+      <span class="icon">🔒</span>
+      <p>ベスト100の登録にはログインが必要です。</p>
+      <div class="btn-group">
+        <button class="btn btn-ghost" onclick="openModal('loginModal')">ログイン</button>
+        <button class="btn btn-primary" onclick="openModal('signupModal')">🍶 新規会員登録</button>
+      </div>
+    </div>
+
+    <div id="best100-wrap" style="display:none;">
+      <div class="info-banner">
+        <span class="banner-icon">🏆</span>
+        <p>
+          <strong>あなたが好きなお店（投稿）を、1位から順に並べて登録しましょう。</strong><br>
+          1位=100点、100位=1点として全会員分の点数を集計し、各投稿の「偏差値」としてメンバー一覧に表示されます。<br>
+          最大100件まで登録可能。保存すると、以前の内容は新しい内容に置き換わります。
+        </p>
+      </div>
+
+      <div class="best100-layout">
+        <div class="best100-panel">
+          <h4>候補（クリックで追加）</h4>
+          <div id="best100-source-list"></div>
+        </div>
+        <div class="best100-panel">
+          <h4>あなたのベスト100（<span id="best100-count">0</span>件）</h4>
+          <div id="best100-rank-list"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:18px; text-align:right;">
+        <button class="btn btn-primary" id="best100-save-btn" onclick="saveMyRanking()">💾 このランキングを保存する</button>
       </div>
     </div>
   </section>
@@ -1320,7 +1452,7 @@
 // =============================================
 // ⚙️ 設定：GASウェブアプリのURLをここに入力
 // =============================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwkuWFjNKLmZ6pJa991fjmU9IbG_UFImRM01sl3xfY_sUPCBSqNHBL4gplnUR9oklwOTg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyRXfcExFNhBpRmPabhtHCY06YODYuUR00H3XeCaqQ7SeaNEbTBIkJYNBbAXDaLVMxB/exec';
 // =============================================
 
 let allMembers = [];
@@ -1336,6 +1468,8 @@ let openReviewRowId = null;   // 現在開いているレビューパネルのro
 let reviewsCache = {};        // rowId -> reviews配列（開くたびに再取得）
 const MAX_PHOTO_DIMENSION = 1280; // 縮小後の最大辺（px）
 const PHOTO_JPEG_QUALITY = 0.8;
+const MAX_RANKING_ITEMS = 100;
+let myRankingRowIds = [];     // ベスト100（rowIdの配列、先頭が1位）
 
 // ===== セッション管理（localStorage） =====
 function loadSession() {
@@ -1363,13 +1497,15 @@ function clearSession() {
 }
 
 // ===== ナビゲーション =====
+const TAB_INDEX = { list: 0, register: 1, best100: 2 };
 function showSection(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('section-' + name).classList.add('active');
-  document.querySelectorAll('.nav-tab')[name === 'list' ? 0 : 1].classList.add('active');
+  document.querySelectorAll('.nav-tab')[TAB_INDEX[name]].classList.add('active');
   if (name === 'list') loadMembers();
   if (name === 'register') renderRegisterSection();
+  if (name === 'best100') renderBest100Section();
 }
 
 function renderRegisterSection() {
@@ -1624,6 +1760,7 @@ function renderCards(members) {
           <div style="margin-top:10px;">
             ${renderStarsDisplay(m.avgRating, m.reviewCount)}
             <button class="review-toggle-btn" onclick="toggleReviewPanel('${m.rowId}')" style="margin-left:10px;">💬 レビューを見る${m.reviewCount ? '（' + m.reviewCount + '）' : ''}</button>
+            ${m.hensachi !== null ? `<span class="hensachi-badge">🏆 偏差値 <span class="val">${m.hensachi.toFixed(1)}</span>（${m.rankVoterCount}人推薦）</span>` : ''}
           </div>
           <div class="review-panel" id="review-panel-${m.rowId}"></div>
           <div class="card-actions">
@@ -2130,6 +2267,117 @@ async function executeDelete() {
     showToast('削除できませんでした: ' + e.message, true);
   } finally {
     btn.disabled = false;
+  }
+}
+
+// ===== ベスト100 =====
+async function renderBest100Section() {
+  const prompt = document.getElementById('best100-login-prompt');
+  const wrap   = document.getElementById('best100-wrap');
+
+  if (!session) {
+    prompt.style.display = 'block';
+    wrap.style.display = 'none';
+    return;
+  }
+  prompt.style.display = 'none';
+  wrap.style.display = 'block';
+
+  if (!allMembers.length) {
+    try {
+      const res = await fetch(GAS_URL + '?action=list');
+      const data = await res.json();
+      if (data.status === 'ok') allMembers = data.members || [];
+    } catch (e) { /* 一覧側のエラー表示に任せる */ }
+  }
+
+  try {
+    const res = await fetch(GAS_URL + `?action=myRanking&token=${encodeURIComponent(session.token)}`);
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message);
+    myRankingRowIds = (data.items || []).map(it => it.rowId).filter(rowId => allMembers.some(m => m.rowId === rowId));
+  } catch (e) {
+    myRankingRowIds = [];
+    showToast('ベスト100の読み込みに失敗しました: ' + e.message, true);
+  }
+
+  renderBest100Lists();
+}
+
+function renderBest100Lists() {
+  const sourceEl = document.getElementById('best100-source-list');
+  const rankEl   = document.getElementById('best100-rank-list');
+  const countEl  = document.getElementById('best100-count');
+
+  const candidates = allMembers.filter(m => !myRankingRowIds.includes(m.rowId));
+
+  sourceEl.innerHTML = candidates.length
+    ? candidates.map(m => `
+        <div class="best100-source-item">
+          <span class="name">${escHtml(m.nickname)}<span class="area-mini">（${escHtml(m.area)}・${escHtml(m.drink)}）</span></span>
+          <button class="btn btn-ghost btn-sm" onclick="addToRanking('${m.rowId}')" ${myRankingRowIds.length >= MAX_RANKING_ITEMS ? 'disabled' : ''}>＋ 追加</button>
+        </div>`).join('')
+    : '<p class="best100-empty-text">追加できる候補がありません。</p>';
+
+  rankEl.innerHTML = myRankingRowIds.length
+    ? myRankingRowIds.map((rowId, idx) => {
+        const m = allMembers.find(x => x.rowId === rowId);
+        if (!m) return '';
+        return `
+          <div class="best100-rank-item">
+            <span class="rank-num">${idx + 1}位</span>
+            <span class="name">${escHtml(m.nickname)}</span>
+            <span class="rank-controls">
+              <button onclick="moveRankingItem('${rowId}', -1)" ${idx === 0 ? 'disabled' : ''} title="上へ">↑</button>
+              <button onclick="moveRankingItem('${rowId}', 1)" ${idx === myRankingRowIds.length - 1 ? 'disabled' : ''} title="下へ">↓</button>
+              <button onclick="removeFromRanking('${rowId}')" title="削除">✕</button>
+            </span>
+          </div>`;
+      }).join('')
+    : '<p class="best100-empty-text">左の候補から選んで追加してください（最大100件）。</p>';
+
+  countEl.textContent = myRankingRowIds.length;
+}
+
+function addToRanking(rowId) {
+  if (myRankingRowIds.includes(rowId)) return;
+  if (myRankingRowIds.length >= MAX_RANKING_ITEMS) {
+    showToast(`ベスト${MAX_RANKING_ITEMS}までしか登録できません`, true);
+    return;
+  }
+  myRankingRowIds.push(rowId);
+  renderBest100Lists();
+}
+
+function removeFromRanking(rowId) {
+  myRankingRowIds = myRankingRowIds.filter(id => id !== rowId);
+  renderBest100Lists();
+}
+
+function moveRankingItem(rowId, direction) {
+  const idx = myRankingRowIds.indexOf(rowId);
+  if (idx === -1) return;
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= myRankingRowIds.length) return;
+  [myRankingRowIds[idx], myRankingRowIds[newIdx]] = [myRankingRowIds[newIdx], myRankingRowIds[idx]];
+  renderBest100Lists();
+}
+
+async function saveMyRanking() {
+  const btn = document.getElementById('best100-save-btn');
+  btn.disabled = true;
+  btn.textContent = '保存中…';
+
+  try {
+    const data = await apiPost('saveMyRanking', { rowIds: myRankingRowIds });
+    if (data.status !== 'ok') throw new Error(data.message);
+    showToast(`✅ ベスト100を保存しました（${data.count}件）`);
+    loadMembers(); // 各カードの偏差値表示を更新
+  } catch (e) {
+    showToast('保存に失敗しました: ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 このランキングを保存する';
   }
 }
 
